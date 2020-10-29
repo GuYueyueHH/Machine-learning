@@ -8,4 +8,9 @@ dependencies:
     - scikit-learn
     - matplotlib
     - pandas
-    - thinc
+    - random
+    - pillow
+    - seaborn
+    - stats
+    - os
+    - path
