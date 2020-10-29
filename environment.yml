@@ -8,7 +8,6 @@ dependencies:
     - scikit-learn
     - matplotlib
     - pandas
-    - random
     - pillow
     - seaborn
     - stats
