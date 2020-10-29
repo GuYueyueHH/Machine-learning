@@ -12,5 +12,3 @@ dependencies:
     - pillow
     - seaborn
     - stats
-    - os
-    - path
