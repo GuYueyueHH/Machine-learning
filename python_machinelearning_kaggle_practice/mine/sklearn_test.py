@@ -195,15 +195,31 @@ x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.25,random_state
 # print(x_train.shape,x_test.shape)
 
 # 模型拟合
+# 单一决策树：decisiontree classifier
 from sklearn.tree import DecisionTreeClassifier
 dtree = DecisionTreeClassifier()
 dtree.fit(x_train,y_train)
-y_predict = dtree.predict(x_test)
+y_dtree_predict = dtree.predict(x_test)
+# 随机森林：randomforest classifier
+from sklearn.ensemble import RandomForestClassifier
+rfc = RandomForestClassifier()
+rfc.fit(x_train,y_train)
+y_rfc_predict = rfc.predict(x_test)
+# 梯度提升决策树：gradient boosting classifier
+from sklearn.ensemble import GradientBoostingClassifier
+gbc = GradientBoostingClassifier()
+gbc.fit(x_train,y_train)
+y_gbc_predict = gbc.predict(x_test)
+
 
 # classificaton report
 from sklearn.metrics import classification_report
-cr = classification_report(y_test,y_predict,target_names=['died','survived'])
-print('\ndecision tree classifier report:\n',cr)
+cr_dtree = classification_report(y_test,y_dtree_predict,target_names=['died','survived'])
+print('\ndecision tree classifier report:\n',cr_dtree)
+cr_rfc = classification_report(y_test,y_rfc_predict,target_names=['died','survived'])
+print('\nrandomforest classifier report:\n',cr_rfc)
+cr_gbc = classification_report(y_test,y_gbc_predict,target_names=['died','survived'])
+print('\ngradient boosting classifier report:\n',cr_gbc)
 
 
 
@@ -212,6 +228,55 @@ print('Trees test end!')
 
 
 # %%
-print(type(x))
+print('Linear regression test begin!')
+# linear regression
+from sklearn.datasets import load_boston
+boston = load_boston()
+# print(boston.DESCR)
+
+# cross validation
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(boston.data,boston.target,test_size=0.25,random_state=33)
+
+# 标准归一化处理
+from sklearn.preprocessing import StandardScaler
+ss_x = StandardScaler()
+x_train = ss_x.fit_transform(x_train)
+x_test = ss_x.transform(x_test)
+ss_y = StandardScaler()
+y_train = ss_y.fit_transform(y_train)
+y_test = ss_y.transform(y_test)
+
+# 模型拟合
+# linear regression
+from sklearn.linear_model import LinearRegression
+lr = LinearRegression()
+lr.fit(x_train,y_train)
+y_lr_predict = lr.predict(x_test)
+# sgd regressor
+from sklearn.linear_model import SGDRegressor
+sgdr = SGDRegressor()
+sgdr.fit(x_train,y_train)
+y_sgdr_predict = sgdr.predict(x_test)
+
+# 模型评估
+from sklearn.metrics import r2_score,mean_squared_error,mean_absolute_error
+# r2_score
+r2_score_lr = r2_score(ss_y.inverse_transform(y_test),ss_y.inverse_transform(y_lr_predict))
+r2_score_sgdr = r2_score(ss_y.inverse_transform(y_test),ss_y.inverse_transform(y_sgdr_predict))
+# mean squared error
+ms_error_lr = mean_squared_error(ss_y.inverse_transform(y_test),ss_y.inverse_transform(y_lr_predict))
+ms_error_sgdr = mean_squared_error(ss_y.inverse_transform(y_test),ss_y.inverse_transform(y_sgdr_predict))
+# mean absolute error
+ma_error_lr = mean_absolute_error(ss_y.inverse_transform(y_test),ss_y.inverse_transform(y_lr_predict))
+ma_error_sgdr = mean_absolute_error(ss_y.inverse_transform(y_test),ss_y.inverse_transform(y_sgdr_predict))
+print('r2 score of linear regression:',r2_score_lr)
+print('r2 score of sgd regression:',r2_score_sgdr)
+print('mean squared error of linear regression:',ms_error_lr)
+print('mean squared error of sgd regression:',ms_error_sgdr)
+print('mean absolute error of linear regression:',ma_error_lr)
+print('mean absolute error of sgd regression:',ma_error_sgdr)
+
+print('Linear regression test end!')
 
 
