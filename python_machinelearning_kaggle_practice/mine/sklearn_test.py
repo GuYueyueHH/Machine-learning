@@ -15,7 +15,7 @@ import numpy as np
 # import matplotlib.pyplot as plt
 
 column_names = ['code number','feature1','feature2','feature3','feature4','feature5','feature6','feature7','feature8','feature9','class_label']
-# dataset =pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data',names=column_names)
+dataset =pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data',names=column_names)
 # 导入数据
 dataset = pd.read_csv('./dataset/breast-cancer-wisconsin.csv')
 dataset = dataset.replace('?',np.nan)
@@ -360,8 +360,6 @@ for svr_score in score_list:
     for svr_kernel in kernel_list:
         print('%8s of SVR %6s regression:\t%.4f'%(svr_score, svr_kernel, model_data[svr_score][svr_kernel]))
 
-
-
 print('\nSVR regression test end!')
 
 
@@ -444,6 +442,7 @@ ma_error = mean_absolute_error(ss_y.inverse_transform(y_test),ss_y.inverse_trans
 print('r2 score            of Decision TREE regression:%.4f'%r2_score)
 print('mean squared error  of Decision TREE regression:%.4f'%ms_error)
 print('mean absolute error of Decision TREE regression:%.4f'%ma_error)
+
 print('\nTREE regression test end!')
 
 
@@ -486,5 +485,147 @@ for ensemble_score in score_list:
         print('%8s of ensemble %26s regression:\t%2.4f'%(ensemble_score, ensemble_model, model_data[ensemble_score][ensemble_model]))
 
 print('\nEnsemble regression test end!')
+
+
+# %%
+print('KMeans cluster test begin!')
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+digits_train = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/optdigits/optdigits.tra',header=None)
+# print(digits_train)
+digits_test = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/optdigits/optdigits.tes',header=None)
+x_train = digits_train.iloc[:,:64]
+y_train = digits_train.iloc[:,64]
+x_test = digits_test.iloc[:,:64]
+y_test = digits_test.iloc[:,64]
+
+# 模型拟合
+from sklearn.cluster import KMeans
+kmeans = KMeans(n_clusters=10)
+kmeans.fit(x_train,y_train)
+y_predict = kmeans.predict(x_test)
+# print(x_train.shape,y_train.shape,x_test.shape,y_test.shape)
+
+# 模型评估
+from sklearn.metrics import adjusted_rand_score
+ars = adjusted_rand_score(y_test,y_predict)
+print('adjusted rand score:',ars)
+from sklearn.metrics import silhouette_score
+# kmeans2 = KMeans(n_clusters=10)
+# kmeans2.fit(x_train)
+shs = silhouette_score(x_test,y_predict,metric='euclidean')         # 轮廓系数：越大越好
+print('silhouette score:',shs)
+
+shs_list = []
+for i in range(2,21):
+    kmeans_i = KMeans(n_clusters=i).fit(x_train)
+    shs = silhouette_score(x_train,kmeans_i.labels_,metric='euclidean')
+    shs_list.append(shs)
+plt.figure(1,figsize=[10,6])
+plt.plot(range(2,21),shs_list)
+plt.title('silhouette score with kmeans cluster number')
+plt.xlabel('cluster number')
+plt.ylabel('sihouette score')
+plt.show()
+
+print('KMeans test end!')
+
+
+# %%
+print('PCA test begin!\n')
+
+import pandas as pd
+
+digits_train = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/optdigits/optdigits.tra',header=None)
+digits_test = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/optdigits/optdigits.tes',header=None)
+# print(digits_train.shape,digits_test.shape)
+
+x_train = digits_train.iloc[:,0:64]
+y_train = digits_train.iloc[:,64]
+x_test = digits_test.iloc[:,0:64]
+y_test = digits_test.iloc[:,64]
+
+# PCA
+from sklearn.decomposition import PCA
+pca = PCA(n_components=3)
+x_train_pca = pca.fit_transform(x_train)
+x_test_pca = pca.transform(x_test)
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def plot_pca_scatter():
+    fig = plt.figure(1,figsize=[6,6])
+    ax = Axes3D(fig)
+    # colors = ['black','ble']
+    class_nums = 10
+    for i in range(class_nums):
+        px = x_train_pca[y_train==i][:,0]
+        py = x_train_pca[y_train==i][:,1]        
+        pz = x_train_pca[y_train==i][:,2]        
+        ax.scatter(px,py,pz)
+    legend_list = [str(i) for i in range(10)]
+    plt.legend(legend_list)
+    plt.show()
+plot_pca_scatter()
+
+from sklearn.svm import LinearSVC,SVC
+# lsvc = LinearSVC()
+lsvc = SVC(kernel='rbf')
+lsvc.fit(x_train,y_train)
+y_lsvc_predict = lsvc.predict(x_test)
+
+# lsvc_pca = LinearSVC()
+lsvc_pca = SVC(kernel='rbf')
+lsvc_pca.fit(x_train,y_train)
+y_lsvc_pca_predict = lsvc_pca.predict(x_test)
+
+from sklearn.metrics import classification_report
+legend_list = [str(i) for i in range(10)]   
+cr_lsvc = classification_report(y_test,y_lsvc_predict)
+cr_lsvc_pca = classification_report(y_test,y_lsvc_pca_predict)
+print('classification report of linear SVC:\n',cr_lsvc)
+print('\nclassification report of PCA linear SVC:\n',cr_lsvc_pca)
+
+print('\nPCA test end!')
+
+
+# %%
+print('Feature extraction test begin!\n')
+# 特征提取 
+# DictVectorizer 对使用字典存储的数据进行特征提取与向量化
+
+measurements = [{'city':'dubai','temperature':33.0}, {'city':'london','temperature':12.0}, {'city':'san fransisco','temperature':18.0}]
+
+from sklearn.feature_extraction import DictVectorizer
+dvec = DictVectorizer()
+
+measurements_array = dvec.fit_transform(measurements).toarray()
+print('measurements array:\n',measurements_array,'\ntype(measurements_array):\t',type(measurements_array))
+feature_names = dvec.get_feature_names()
+print('\nfeature names:\t',feature_names)
+
+print('\nFeature extraction test end!')
+
+
+# %%
+print('Feature extraction test begin!\n')
+# 特征提取 
+# DictVectorizer 对使用字典存储的数据进行特征提取与向量化
+
+
+print('\nFeature extraction test end!')
+
+
+# %%
+print('Feature extraction test begin!\n')
+# 特征提取 
+# DictVectorizer 对使用字典存储的数据进行特征提取与向量化
+
+
+print('\nFeature extraction test end!')
 
 
