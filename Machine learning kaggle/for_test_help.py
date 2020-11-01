@@ -1,31 +1,41 @@
-print('Xgboost test begin!\n')
-import pandas as pd
+import tensorflow as tf
 import numpy as np
-titanic = pd.read_csv('http://biostat.mc.vanderbilt.edu/wiki/pub/Main/DataSets/titanic.txt')
-x = titanic[['pclass','age','sex']]
-y = titanic['survived']
+import pandas as pd
 
-x['age'].fillna(x['age'].mean(),inplace=True)
-
+column_names = ['code number', \
+                'Clump Thickness', \
+                'Uniformity of Cell Size', \
+                'Uniformity of Cell Shape', \
+                'Marginal Adhesion', \
+                'Single Epithelial Cell Size', \
+                'Bare Nuclei', \
+                'Bland Chromatin', \
+                'Normal Nucleoli', \
+                'Mitoses', \
+                'class_label']
+dataset =pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data',names=column_names)
+# print(dataset)
 from sklearn.model_selection import train_test_split
-x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.25,random_state=33)
-from sklearn.feature_extraction import DictVectorizer
-dict_vec = DictVectorizer(sparse=False)
-x_train = dict_vec.fit_transform(x_train.to_dict(orient='record'))
-x_test = dict_vec.transform(x_test.to_dict(orient='record'))
+x_train,x_test,y_train,y_test = train_test_split(dataset[['Clump Thickness', 'Uniformity of Cell Size']], dataset['class_label'], test_size=0.25, random_state=33)
+x_train = np.float32(x_train.T)
+x_test = np.float32(x_test.T)
+y_train = np.float32(y_train.T)
+y_test = np.float32(y_test.T)
+# print(x_train,y_train)
 
-from sklearn.ensemble import RandomForestClassifier
-random_forest_classifier = RandomForestClassifier()
-random_forest_classifier.fit(x_train,y_train)
-# y_predict = random_forest_classifier.predict(x_test)
-score1 = random_forest_classifier.score(x_test, y_test)
+b = tf.Variable(tf.zeros([1]))
+w = tf.Variable(tf.random.uniform([1,2],-1.0,1.0))
+y = tf.matmul(w,x_train)+b
+loss = tf.reduce_mean(tf.square(y-y_train))
+optimizer = tf.compat.v1.train.GradientDescentOptimizer(0.01)
+train = optimizer.minimize(loss)
+init = tf.initialize_all_variables()
+tf.init()
 
-from xgboost import XGBClassifier
-xgbc = XGBClassifier()
-xgbc.fit(x_train,y_train)
-# y_predict_xgbc = xgbc.predict(x_test)
-score_xgbc = random_forest_classifier.score(x_test, y_test)
-print('Score of random forest classifier:  %.5f'%score1)
-print('Score of XGBClassifier           :  %.5f'%score_xgbc)
+for i in range(1000):
+    tf.train()
+    if i%200==0:
+        tf.print('i:',i,'\tw:',w,'\tb:',b'\tloss:',loss)
 
-print('\nXgboost test end!')
+
+

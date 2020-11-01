@@ -796,14 +796,133 @@ sentence_vec = count_vec.fit_transform(sentence)
 print('%scountvectorizer%s sentence to array:\n'%(print_color.RED,print_color.END),sentence_vec.toarray()) 
 print('%scountvectorizer%s feature names:\n%s'%(print_color.RED,print_color.END,count_vec.get_feature_names()))
 
-
-
+# NLTK对文本进行语言学分析
+import nltk
+tokens1 = nltk.word_tokenize(sentence1)
+tokens2 = nltk.word_tokenize(sentence2)
+# print(tokens1,tokens2)
+vocabulary1 = sorted(set(tokens1))
+vocabulary2 = sorted(set(tokens2))
+# print(vocabulary1,vocabulary2)
+# 寻找原始词根
+stemmer = nltk.stem.PorterStemmer()
+stemmer1 = [stemmer.stem(t) for t in tokens1]
+stemmer2 = [stemmer.stem(t) for t in tokens2]
+print(stemmer1,stemmer2)
+# 初始化词性标注器，对词汇进行标注
+pos_tag1= nltk.tag.pos_tag(tokens1)
+pos_tag2= nltk.tag.pos_tag(tokens2)
+print(pos_tag1,pos_tag2)
 
 print('\n%sNLTK test end!%s'%(print_color.BOLD,print_color.END))
 
 
 # %%
-import os
-print(os.getcwd())
+print('Word2vec test begin!\n')
+from sklearn.datasets import fetch_20newsgroups
+news = fetch_20newsgroups(subset='all')
+# x,y = news.data[:10],news.target[:10]
+x,y = news.data,news.target
+
+from bs4 import BeautifulSoup
+import nltk,re
+def new2sentences(news,sentences):
+    news_text = BeautifulSoup(news).get_text()
+    # print('\033[91m','news_text:\n','\033[0m',news_text,'\n\n\n')
+    # 将内容拆分为一句话
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+    raw_sentences = tokenizer.tokenize(news_text)
+    # print('\033[91m','raw_sentences:\n','\033[0m',raw_sentences,'\n\n\n')
+    for sent in raw_sentences:
+        # 将一句话拆分为词
+        # print('\033[91m','sentence:\n','\033[0m',re.sub('[^a-zA-Z]',' ',sent.lower().strip()).split(),'\n\n\n')
+        sentences.append(re.sub('[^a-zA-Z]',' ',sent.lower().strip()).split())
+    return
+sentences = []
+for xx in x:
+    new2sentences(xx,sentences)
+print('sentences size:',len(sentences),len(sentences[0]))
+
+from gensim.models import word2vec
+num_features = 300
+min_word_count = 20
+num_workers = -1
+context = 5
+downsampling = 1e-3
+
+model = word2vec.Word2Vec(sentences,workers=num_workers,     size=num_features, min_count=min_word_count,     window=context, sample=downsampling)
+model.init_sims(replace=True)
+print('\nmorning most_similar words:\n',model.most_similar('morning'))
+print('\nemail most_similar words:\n',model.most_similar('email'))
+print('\nmorning and afternoon similarity:',model.similarity('morning','afternoon'))
+sentence1 = 'cat is walking in the bedroom'
+sentence2 = 'dog was running across the kitchen'
+print('\nsentence1 and sentence2 similarity:',model.n_similarity(sentence1.split(),sentence2.split()))
+
+print('\nWord2vec test end!')
+
+
+# %%
+print('Xgboost test begin!\n')
+import pandas as pd
+import numpy as np
+titanic = pd.read_csv('http://biostat.mc.vanderbilt.edu/wiki/pub/Main/DataSets/titanic.txt')
+x = titanic[['pclass','age','sex']]
+y = titanic['survived']
+
+x['age'].fillna(x['age'].mean(),inplace=True)
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.25,random_state=33)
+from sklearn.feature_extraction import DictVectorizer
+dict_vec = DictVectorizer(sparse=False)
+x_train = dict_vec.fit_transform(x_train.to_dict(orient='record'))
+x_test = dict_vec.transform(x_test.to_dict(orient='record'))
+
+from sklearn.ensemble import RandomForestClassifier
+random_forest_classifier = RandomForestClassifier()
+random_forest_classifier.fit(x_train,y_train)
+# y_predict = random_forest_classifier.predict(x_test)
+score1 = random_forest_classifier.score(x_test, y_test)
+
+from xgboost import XGBClassifier
+xgbc = XGBClassifier()
+xgbc.fit(x_train,y_train)
+# y_predict_xgbc = xgbc.predict(x_test)
+score_xgbc = random_forest_classifier.score(x_test, y_test)
+print('Score of random forest classifier:  %.5f'%score1)
+print('Score of XGBClassifier           :  %.5f'%score_xgbc)
+
+print('\nXgboost test end!')
+
+
+# %%
+print('Tensorflow test begin!\n')
+
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+
+# 使用tensorflow输出一句话
+greeting = tf.constant('Hello google tensorflow!')
+tf.print(greeting)
+
+# 使用tensorflow完成一次线性函数计算
+mat1 = tf.constant([[3.0,3.0]])
+mat2 = tf.constant([[2.0],[2.0]])
+product = tf.matmul(mat1,mat2)
+linear = tf.add(product,tf.constant(2.0))
+tf.print('linear answer:',linear[0,0])
+
+# 自定义一个线性分类器
+column_names = ['code number','feature1','feature2','feature3','feature4','feature5','feature6','feature7','feature8','feature9','class_label']
+dataset =pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data',names=column_names)
+dataset = dataset.replace('?',np.nan)
+dataset = dataset.dropna(how='any')
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(dataset[column_names[1:9]], dataset[column_names[-1]], test_size=0.25, random_state=33)
+b = tf.Va
+
+print('\nTensorflow test end!')
 
 
